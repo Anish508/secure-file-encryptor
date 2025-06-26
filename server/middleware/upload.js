@@ -2,7 +2,7 @@ const multer = require('multer');
 
 const storage = multer.memoryStorage();
 
-// ✅ For encryption – allow only images and text files
+
 const encryptFilter = (req, file, cb) => {
   if (
     file.mimetype.startsWith('image/') ||
@@ -15,7 +15,7 @@ const encryptFilter = (req, file, cb) => {
   }
 };
 
-// ✅ For decryption – allow all files
+
 const decryptFilter = (req, file, cb) => {
   cb(null, true);
 };
