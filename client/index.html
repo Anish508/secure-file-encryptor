@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure File Encryptor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gradient-to-tr from-blue-50 to-blue-100 min-h-screen flex flex-col items-center justify-center p-6"
+  >
+    <div class="max-w-xl w-full bg-white shadow-xl rounded-xl p-6 space-y-6">
+      <h1 class="text-2xl font-bold text-center text-blue-800">
+        🔐 Secure File Encryptor
+      </h1>
+
+      <!-- Encryption Form -->
+      <form id="encryptForm" class="space-y-4" enctype="multipart/form-data">
+        <label class="block text-sm font-medium text-gray-700"
+          >Select file to encrypt:</label
+        >
+        <input
+          type="file"
+          name="file"
+          class="w-full p-2 border rounded"
+          required
+        />
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded"
+        >
+          Encrypt & Backup
+        </button>
+      </form>
+
+      <div
+        id="encryptResult"
+        class="text-green-600 font-medium text-sm text-center hidden"
+      ></div>
+
+      <hr />
+
+      <!-- Decryption Form -->
+      <form id="decryptForm" class="space-y-4" enctype="multipart/form-data">
+        <label class="block text-sm font-medium text-gray-700"
+          >Upload encrypted file (.gz.enc):</label
+        >
+        <input
+          type="file"
+          name="file"
+          class="w-full p-2 border rounded"
+          required
+        />
+        <button
+          type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
+        >
+          Decrypt & Restore
+        </button>
+      </form>
+
+      <div
+        id="decryptResult"
+        class="text-green-600 font-medium text-sm text-center hidden"
+      ></div>
+    </div>
+
+    <script>
+      const encryptForm = document.getElementById("encryptForm");
+      const decryptForm = document.getElementById("decryptForm");
+      const encryptResult = document.getElementById("encryptResult");
+      const decryptResult = document.getElementById("decryptResult");
+
+      encryptForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(encryptForm);
+
+        const res = await fetch("/encrypt", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          encryptResult.innerHTML = `
+          ✅ Encrypted successfully!<br/>
+          <a class="text-blue-700 underline" href="/backups/${data.file}" download>Download Encrypted File</a>
+        `;
+          encryptResult.classList.remove("hidden");
+        } else {
+          encryptResult.innerHTML = "❌ Encryption failed.";
+          encryptResult.classList.remove("hidden");
+        }
+      });
+
+      decryptForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(decryptForm);
+
+        try {
+          const res = await fetch("/decrypt", {
+            method: "POST",
+            body: formData,
+          });
+
+          let data;
+          try {
+            data = await res.json();
+          } catch (jsonErr) {
+            decryptResult.innerHTML =
+              "❌ Server returned invalid JSON (possibly an HTML error page)";
+            decryptResult.classList.remove("hidden");
+            return;
+          }
+
+          if (res.ok) {
+            decryptResult.innerHTML = `
+        ✅ Decrypted successfully!<br/>
+        <a class="text-green-700 underline" href="/restored/${data.file}" download>Download Decrypted File</a>
+      `;
+          } else {
+            decryptResult.innerHTML = `❌ Decryption failed: ${
+              data.error || "Unknown error"
+            }`;
+          }
+        } catch (err) {
+          decryptResult.innerHTML = `❌ Error: ${
+            err.message || "Unexpected error"
+          }`;
+        }
+
+        decryptResult.classList.remove("hidden");
+      });
+    </script>
+  </body>
+</html>
